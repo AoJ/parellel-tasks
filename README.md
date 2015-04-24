@@ -34,7 +34,9 @@ or try
 ## Methods
 
 ### TaskRunner(Task[], $parallel = 3)
-- `run()` start tasks
+- **`run()`** start tasks
+- **`setParallel($newParallelCount)`** set number of simultaneously process
+- `<integer>` **`getParallel()`**
 
 
 ### Task($cmd, $args = array(), $cwp = __DIR__)

@@ -46,6 +46,25 @@ class TaskRunner
 
 	}
 
+
+	/**
+	 * @param integer $newParallelCount
+	 */
+	public function setParallel($newParallelCount)
+	{
+		$this->parallel = max((integer) $newParallelCount, 1);
+
+	}
+
+	/**
+	 * @return integer
+	 */
+	public function getParallel()
+	{
+		$this->parallel;
+	}
+
+
 	protected function printStatus()
 	{
 		$sizes = ["pid" => 10, "cmd" => 50, "state" => 10, "time" => 12];
