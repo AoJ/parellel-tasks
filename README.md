@@ -53,4 +53,4 @@ or try
 - configurable output
 - configurable stderr outputing
 - add events (done, queued, started)
-- add tests
+- add tests, more tests
