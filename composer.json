@@ -1,0 +1,23 @@
+{
+    "name": "aoj/parellel-tasks",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-0": { "": "src/" }
+    },
+    "authors": [
+        {
+            "name": "tomas.hegenbart",
+            "email": "tomas.hegenbart@socialbakers.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=5.4"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.x-dev"
+        }
+    }
+}
