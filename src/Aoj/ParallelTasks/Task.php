@@ -23,6 +23,8 @@ class Task
 
 	protected $args;
 
+	protected $pipes;
+
 	protected $resource;
 
 	protected $status = [];
@@ -41,11 +43,11 @@ class Task
 	 * @param string|array $args arguments
 	 * @param string|null $cwd current working directory
 	 */
-	public function __construct($cmd, $args = array(), $cwd = __DIR__)
+	public function __construct($cmd, $args = array(), Interpret\Interpret $interpret = null)
 	{
 		$this->cmd = (string) $cmd;
 		$this->args = is_array($args) ? $args : explode(" ", $args);
-		$this->cwd = (string) $cwd;
+		$this->interpret = $interpret ?: new Interpret\Interpret;
 	}
 
 
@@ -65,19 +67,22 @@ class Task
 	{
 		if(!$this->startTime) $this->startTime = $this->start();
 		if($this->finishTime) return self::FINISHED;
-		if(!is_resource($this->stdout)) return self::FINISHED;
+		if(!is_resource($this->pipes[self::STDOUT])) return self::FINISHED;
+		if(!is_resource($this->pipes[self::STDERR])) return self::FINISHED;
 
 
 		#read buffered stdout from process
 		#process can continuously streaming results
-		$this->result .= stream_get_contents($this->stdout);
+		$this->result .= stream_get_contents($this->pipes[self::STDOUT]);
+		$this->result .= stream_get_contents($this->pipes[self::STDERR]);
 		$this->status = proc_get_status($this->resource);
 		if($this->status["running"]) {
 			return self::RUNNING;
 		}
 
 		#close and clean resources
-		fclose($this->stdout);
+		fclose($this->pipes[self::STDOUT]);
+		fclose($this->pipes[self::STDERR]);
 		$processCode = $this->status["exitcode"];
 		$closeCode = proc_close($this->resource);
 		$this->finishTime = microtime(self::AS_FLOAT);
@@ -107,6 +112,35 @@ class Task
 
 
 	/**
+	 * @return boolean|null returns null if task doesn't finish yet
+	 */
+	public function isSuccess()
+	{
+		if(!$this->isDone()) return null;
+		return $this->exitCode === 0;
+	}
+
+
+	/**
+	 * @return boolean|null returns null if task doesn't finish yet
+	 */
+	public function isFail()
+	{
+		if(!$this->isDone()) return null;
+		return !$this->isSuccess();
+	}
+
+
+	/**
+	 * @return boolean
+	 */
+	public function isDone()
+	{
+		return (bool) $this->finishTime;
+	}
+
+
+	/**
 	 * @return float miliseconds
 	 */
 	public function getDuration()
@@ -130,7 +164,7 @@ class Task
 	 */
 	public function getCmd()
 	{
-		return isset($this->status["command"]) ? $this->status["command"] : $this->formatCmd();
+		return isset($this->status["command"]) ? $this->status["command"] : $this->interpret->formatCommand($this->cmd, $this->args);
 	}
 
 
@@ -138,29 +172,21 @@ class Task
 	protected function start()
 	{
 		$this->resource = proc_open(
-			$this->formatCmd(),
+			$this->interpret->formatCommand($this->cmd, $this->args),
 			[["pipe", "r"], ["pipe", "w"], ["pipe", "w"]],
 			$pipes,
-			$this->cwd,
+			$this->interpret->getCwd(),
 			self::INHERIT_ENV,
 			['bypass_shell' => TRUE] //skip windows cmd.exe
 		);
 
 		fclose($pipes[self::STDIN]);
-		fclose($pipes[self::STDERR]);
-		$this->stdout = $pipes[self::STDOUT];
+		$this->pipes = $pipes;
 		stream_set_blocking($pipes[self::STDOUT], 0);
+		stream_set_blocking($pipes[self::STDERR], 0);
 		$this->status = proc_get_status($this->resource);
 
 		return microtime(self::AS_FLOAT);
-	}
-
-
-	protected function formatCmd()
-	{
-		$cmd = escapeshellcmd($this->cmd);
-		$args = implode(" ", array_map("escapeshellarg", $this->args));
-		return "$cmd $args";
 	}
 
 }

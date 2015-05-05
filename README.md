@@ -50,7 +50,5 @@ or try
 
 
 ## TODO
-- configurable output
-- configurable stderr outputing
-- add events (done, queued, started)
 - add tests, more tests
+- update readme (see example.php for now)
