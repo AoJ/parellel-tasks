@@ -52,3 +52,4 @@ or try
 ## TODO
 - add tests, more tests
 - update readme (see example.php for now)
+- update
